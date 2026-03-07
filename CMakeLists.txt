@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.28)
 
-project(pyrite64 VERSION 0.5.0)
+project(pyrite64 VERSION 0.6.0)
 
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -120,7 +120,7 @@ add_executable(pyrite64 src/main.cpp
         src/renderer/vertex.h
         src/context.h
         src/project/project.h
-        src/editor/pages/editorMain.cpp
+        src/editor/pages/launcher.cpp
         src/renderer/texture.cpp
         src/renderer/texture.h
         src/project/project.cpp

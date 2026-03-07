@@ -12,6 +12,7 @@
 #include "../keymap.h"
 #include "../../utils/filePicker.h"
 #include "../../utils/prop.h"
+#include "theme.h"
 #include "glm/vec3.hpp"
 #include "glm/gtc/quaternion.hpp"
 #include "glm/gtc/type_ptr.hpp"
@@ -536,13 +537,13 @@ namespace ImTable
 
     if(propState)
     {
-      ImGui::PushFont(nullptr, 18.0f);
+      ImGui::PushFont(nullptr, 18.0_px);
 
       if(ImGui::IconButton(
         propState->value
         ? ICON_MDI_CHECKBOX_MARKED_CIRCLE
         : ICON_MDI_CHECKBOX_BLANK_CIRCLE_OUTLINE,
-        {24,24},
+        {24_px,24_px},
         ImVec4{1,1,1,1}
       )) {
         propState->value = !propState->value;
@@ -643,62 +644,8 @@ namespace ImTable
     }
     if(changed)Editor::UndoRedo::getHistory().markChanged("Edit " + name);
   }
-  
-  static ImGuiKeyChord* rebindingChord{nullptr};
-  inline bool addKeybind(const std::string &name, ImGuiKeyChord &chord, ImGuiKeyChord defaultValue, bool isChord) {
-    add(name);
-    ImGui::PushID(name.c_str());
 
-    bool isOverridden = chord != defaultValue;
-    float w = isOverridden ? (ImGui::GetContentRegionAvail().x - ImGui::GetFrameHeightWithSpacing()) : -FLT_MIN;
-    
-    bool isRebinding = rebindingChord == &chord;
-    const char* label = isRebinding ? "Press any key..." : Editor::Input::GetKeyChordName(chord).c_str();
-    if (ImGui::Button(label, ImVec2(w, 0))) {
-      rebindingChord = &chord;
-    }
-    
-    if (isOverridden) {
-      ImGui::SameLine(0, 2);
-      if (ImGui::Button(ICON_MDI_CLOSE, ImVec2(-FLT_MIN, 0))) {
-        chord = defaultValue;
-        Editor::UndoRedo::getHistory().markChanged("Reset " + name);
-      }
-      if (ImGui::IsItemHovered()) ImGui::SetTooltip("Reset to default key.");
-    }
-
-    if (!isRebinding) {
-      ImGui::PopID();
-      return false;
-    }
-
-    ImGuiIO &io = ImGui::GetIO();
-    for (int k = ImGuiKey_NamedKey_BEGIN; k < ImGuiKey_ReservedForModCtrl; k++) {
-      if (!ImGui::IsKeyPressed((ImGuiKey)k)) continue;
-      if (isChord && k >= (int)ImGuiKey_LeftCtrl && k <= (int)ImGuiKey_RightSuper) continue;
-
-      ImGuiKeyChord mods = ImGuiKey_None;
-      if (isChord) {
-        if (io.KeyCtrl)  mods |= ImGuiMod_Ctrl;
-        if (io.KeyShift) mods |= ImGuiMod_Shift;
-        if (io.KeyAlt)   mods |= ImGuiMod_Alt;
-        if (io.KeySuper) mods |= ImGuiMod_Super;
-      }
-
-      rebindingChord = nullptr; 
-      if (k == ImGuiKey_Escape) {
-        break;
-      } else {
-        chord = (ImGuiKey)k | mods;
-        Editor::UndoRedo::getHistory().markChanged("Rebind " + name);
-        ImGui::PopID();
-        return true;
-      }
-    }
-    
-    ImGui::PopID();
-    return false;
-  }
+  bool addKeybind(const std::string &name, ImGuiKeyChord &chord, ImGuiKeyChord defaultValue, bool isChord);
 
   inline bool addKeybind(const std::string &name, ImGuiKey &key, ImGuiKey defaultValue) {
     return addKeybind(name, (ImGuiKeyChord&)key, (ImGuiKeyChord)defaultValue, false);

@@ -17,7 +17,7 @@
 #include "editor/actions.h"
 #include "editor/window.h"
 #include "editor/imgui/theme.h"
-#include "editor/pages/editorMain.h"
+#include "editor/pages/launcher.h"
 #include "editor/pages/editorScene.h"
 #include "editor/imgui/notification.h"
 #include "renderer/scene.h"
@@ -255,7 +255,6 @@ int main(int argc, char** argv)
   // io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;
 
   ImGui::Theme::setTheme();
-  ImGui::Theme::setZoom();
   ImGui::Theme::update();
 
   // Setup Platform/Renderer backends
@@ -274,7 +273,7 @@ int main(int argc, char** argv)
 
     Renderer::Scene scene{};
     ctx.scene = &scene;
-    Editor::Main editorMain{ctx.gpu};
+    Editor::Launcher editorMain{ctx.gpu};
     ctx.editorScene = std::make_unique<Editor::Scene>();
 
     ctx.loadPrefs();
@@ -291,8 +290,11 @@ int main(int argc, char** argv)
     while(!done) {
 
       auto frameStart = SDL_GetTicksNS();
+
+      ImGui::Theme::update();
+
       //printf("Frame Start | Time: %.2fms\n", ImGui::GetIO().DeltaTime * 1000.0f);
-      SDL_Event event;
+      SDL_Event event{};
       while (SDL_PollEvent(&event))
       {
         //convert pinch events to whole number mouse wheel events to mimic windows 
@@ -349,22 +351,6 @@ int main(int argc, char** argv)
         // Check: io.WantCaptureMouse, io.WantCaptureKeyboard
       }
 
-      if(!ImGui::GetIO().WantTextInput)
-      {
-        if (ImGui::IsKeyChordPressed(ctx.keymap.copy)) {
-          Editor::Actions::call(Editor::Actions::Type::COPY);
-        }
-        if (ImGui::IsKeyChordPressed(ctx.keymap.paste)) {
-          Editor::Actions::call(Editor::Actions::Type::PASTE);
-        }
-        if (ImGui::IsKeyChordPressed(ctx.keymap.save)) {
-          if (ctx.project) {
-            ctx.project->save();
-            ctx.editorScene->save();
-          }
-        }
-      }
-
       if (ImGui::IsKeyChordPressed(ctx.keymap.build)) {
         Editor::Actions::call(Editor::Actions::Type::PROJECT_BUILD);
       }
@@ -401,6 +387,38 @@ int main(int argc, char** argv)
       ImGui_ImplSDLGPU3_NewFrame();
       ImGui_ImplSDL3_NewFrame();
       ImGui::NewFrame();
+
+      if(!ImGui::GetIO().WantTextInput)
+      {
+        int mouseWheelY = ImGui::GetIO().MouseWheel;
+        if(ImGui::IsKeyChordPressed(ctx.keymap.zoomIn)) {
+          // special handling for zoom, the default keybind uses CTRL+SCROLL,
+          // so check direction here
+          int zoom = 1;
+          if(mouseWheelY > 0)zoom = 1;
+          if(mouseWheelY < 0)zoom = -1;
+          ImGui::Theme::changeZoom(zoom);
+        }
+        else if(ImGui::IsKeyChordPressed(ctx.keymap.zoomOut)) {
+          int zoom = -1;
+          if(mouseWheelY > 0)zoom = 1;
+          if(mouseWheelY < 0)zoom = -1;
+          ImGui::Theme::changeZoom(zoom);
+        }
+
+        if (ImGui::IsKeyChordPressed(ctx.keymap.copy)) {
+          Editor::Actions::call(Editor::Actions::Type::COPY);
+        }
+        if (ImGui::IsKeyChordPressed(ctx.keymap.paste)) {
+          Editor::Actions::call(Editor::Actions::Type::PASTE);
+        }
+        if (ImGui::IsKeyChordPressed(ctx.keymap.save)) {
+          if (ctx.project) {
+            ctx.project->save();
+            ctx.editorScene->save();
+          }
+        }
+      }
 
       uint64_t ticksSelf = SDL_GetTicksNS();
       scene.update();
