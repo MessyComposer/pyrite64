@@ -526,11 +526,18 @@ void Editor::AssetsBrowser::draw() {
     }
 
     if(ImGui::BeginPopup("SceneCtxMenu")) {
-      if(scenes.size() > 1 && ImGui::MenuItem(ICON_MDI_TRASH_CAN_OUTLINE " Delete")) {
+      bool canDelete = scenes.size() > 1;
+      if(!canDelete) ImGui::BeginDisabled();
+      if(ImGui::MenuItem(ICON_MDI_TRASH_CAN_OUTLINE " Delete")) {
         ctx.project->getScenes().remove(ctxSceneId);
         ctx.project->conf.sceneIdLastOpened = ctx.project->getScenes().getEntries().empty()
           ? 0 : ctx.project->getScenes().getEntries().front().id;
         ctx.project->saveConfig();
+      }
+      if(!canDelete) {
+        if(ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenDisabled))
+          ImGui::SetMouseCursor(ImGuiMouseCursor_NotAllowed);
+        ImGui::EndDisabled();
       }
       ImGui::EndPopup();
     }
